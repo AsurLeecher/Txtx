@@ -17,8 +17,9 @@ load_dotenv()
 API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-UTLRA_USER = os.environ.get("UTLRA_USER")
-CHANNEL = os.environ.get("CHANNEL")
+ULTRA_USER = os.environ.get("ULTRA_USER")
+CHANNEL = int(os.environ.get("CHANNEL"))
+LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL"))
 thumb = os.environ.get("THUMB")
 
 if thumb.startswith("http://") or thumb.startswith("https://"):
@@ -26,7 +27,9 @@ if thumb.startswith("http://") or thumb.startswith("https://"):
     thumb = "thumb.jpg"
 
 
-bot = Client("server", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+bot = Client(
+    "server", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, sleep_threshold=120
+)
 
 file_handler = logging.FileHandler(filename="bot.log", mode="w")
 stdout_handler = logging.StreamHandler(sys.stdout)
@@ -82,7 +85,6 @@ async def send_video(bot: Client, channel, path, caption):
         # await reply.delete()
 
 
-
 async def download_upload_video(bot: Client, channel, video):
     vid_id, url, vid_format, title, topic, allow_drm = video
     filename, title = await awdl.download_url(
@@ -132,7 +134,9 @@ async def download_upload_videos(bot: Client, channel, videos):
     return downloaded_videos
 
 
-@bot.on_message(filters.document & filters.caption)
+@bot.on_message(
+    filters.document & filters.caption & filters.private & filters.user(ULTRA_USER)
+)
 async def download(bot: Client, message: Message):
     caption = message.caption
     if caption != "/download":
@@ -154,7 +158,7 @@ async def download(bot: Client, message: Message):
 
 @bot.on_message(filters.command("start"))
 async def start(bot: Client, message: Message):
-    await message.reply("Server bot running")
+    await message.reply("DL Server bot running")
     return
 
 
@@ -162,7 +166,9 @@ if __name__ == "__main__":
 
     bot.connect()
     _bot = bot.get_me()
-    bot.send_message(CHANNEL, f"Server bot: @{_bot.username} started")
+    start_msg = f"DL Server bot: @{_bot.username} started"
+    logger.warning(start_msg)
+    bot.send_message(LOG_CHANNEL, start_msg)
     bot.disconnect()
 
     bot.run()
