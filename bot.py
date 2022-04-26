@@ -7,6 +7,7 @@ import sys
 from textwrap import dedent
 from aio_get_video_info import get_video_attributes, get_rcode_out_err
 import aiofiles
+import aiofiles.os
 from dotenv import load_dotenv
 from pyrogram import Client, filters
 from pyrogram.types import Message
@@ -17,9 +18,9 @@ load_dotenv()
 API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ULTRA_USER = os.environ.get("ULTRA_USER")
-CHANNEL = int(os.environ.get("CHANNEL"))
-LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL"))
+CLIENT_BOT = os.environ.get("CLIENT_BOT")
+DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL"))
+INTERACTION_CHANNEL = int(os.environ.get("INTERACTION_CHANNEL"))
 thumb = os.environ.get("THUMB")
 
 if thumb.startswith("http://") or thumb.startswith("https://"):
@@ -113,6 +114,7 @@ async def download_upload_video(bot: Client, channel, video):
             dl_msg = await send_video(bot, channel, filename, dedent(caption_text))
         except:
             dl_msg = None
+        await aiofiles.os.remove(filename)
     try:
         return vid_id, dl_msg.message_id
     except:
@@ -134,41 +136,43 @@ async def download_upload_videos(bot: Client, channel, videos):
     return downloaded_videos
 
 
-@bot.on_message(
-    filters.document & filters.caption & filters.private & filters.user(ULTRA_USER)
-)
+@bot.on_message(filters.document & filters.caption & filters.chat(INTERACTION_CHANNEL))
 async def download(bot: Client, message: Message):
+    global bot_username
     caption = message.caption
-    if caption != "/download":
+    if caption != f"/download@{bot_username}":
         return
     json_file = await message.download()
     async with aiofiles.open(json_file, "r", encoding="utf-8") as f:
         json_text = await f.read()
 
     message_dict = json.loads(json_text)
-    channel = message_dict["channel"]
+    chat = message_dict["chat"]
     videos = message_dict["videos"]
-    downloaded_videos = await download_upload_videos(bot, CHANNEL, videos)
-    done_dict = {"channel": channel, "videos": sorted(downloaded_videos)}
+    downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos)
+    done_dict = {"chat": chat, "videos": sorted(downloaded_videos)}
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
     async with aiofiles.open(done_json_file, "w", encoding="utf-8") as f:
         await f.write(json.dumps(done_dict, indent=4))
-    await message.reply_document(done_json_file, caption="/copy")
+    await message.reply_document(done_json_file, caption=f"/copy{CLIENT_BOT}")
+    await aiofiles.os.remove(json_file)
+    await aiofiles.os.remove(done_json_file)
 
 
 @bot.on_message(filters.command("start"))
 async def start(bot: Client, message: Message):
     await message.reply("DL Server bot running")
-    return
 
 
 if __name__ == "__main__":
+    global bot_username
 
     bot.connect()
     _bot = bot.get_me()
-    start_msg = f"DL Server bot: @{_bot.username} started"
+    bot_username = _bot.username
+    start_msg = f"DL Server bot: @{bot_username} started"
     logger.warning(start_msg)
-    bot.send_message(LOG_CHANNEL, start_msg)
+    bot.send_message(INTERACTION_CHANNEL, start_msg)
     bot.disconnect()
 
     bot.run()
