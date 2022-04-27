@@ -4,5 +4,5 @@ Pyrogram==2.0.13
 PySocks==1.7.1
 python-dotenv==0.20.0
 TgCrypto==1.2.3
-git+https://git.deshdeepak.me/deshdeepak/drm-dl.git
+ git+https://git.deshdeepak.me/deshdeepak/drm-dl.git
 
