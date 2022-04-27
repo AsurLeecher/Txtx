@@ -9,7 +9,7 @@ from aio_get_video_info import get_video_attributes, get_rcode_out_err
 import aiofiles
 import aiofiles.os
 from dotenv import load_dotenv
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import Message
 import all_web_dl as awdl
 
@@ -167,12 +167,11 @@ async def start(bot: Client, message: Message):
 if __name__ == "__main__":
     global bot_username
 
-    bot.connect()
+    bot.start()
     _bot = bot.get_me()
     bot_username = _bot.username
     start_msg = f"DL Server bot: @{bot_username} started"
     logger.warning(start_msg)
     bot.send_message(INTERACTION_CHANNEL, start_msg)
-    bot.disconnect()
-
-    bot.run()
+    idle()
+    bot.stop()
