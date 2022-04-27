@@ -8,3 +8,6 @@ downloads/
 *.sock
 *.diff
 *.db
+*.csv
+*.bak
+heroku*
