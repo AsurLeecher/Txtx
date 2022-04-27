@@ -125,7 +125,7 @@ async def download_upload_video(bot: Client, channel, video):
         except:
             pass
     try:
-        return vid_id, dl_msg.message_id
+        return vid_id, dl_msg.id
     except:
         print("Error sending message")
         return vid_id, None
