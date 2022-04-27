@@ -51,11 +51,14 @@ async def send_video(bot: Client, channel, path, caption):
     try:
         duration, width, height = await get_video_attributes(path)
         # start_time = time.time()
-        cmd = f"mv '{path}' '{path}.mkv'"
-        path = f"{path}.mkv"
-        cmd = shlex.split(cmd)
-        await get_rcode_out_err(cmd)
-        return await bot.send_video(
+        # cmd = f"mv '{path}' '{path}.mkv'"
+        try:
+            await aiofiles.os.rename(path, f"{path}.mkv")
+        except:
+            pass
+        else:
+            path = f"{path}.mkv"
+        msg = await bot.send_video(
             channel,
             video=path,
             caption=caption,
@@ -73,7 +76,7 @@ async def send_video(bot: Client, channel, path, caption):
         logger.exception("Error fetching attributes")
         print(path)
         # start_time = time.time()
-        return await bot.send_video(
+        msg = await bot.send_video(
             channel,
             video=path,
             caption=caption,
@@ -84,6 +87,7 @@ async def send_video(bot: Client, channel, path, caption):
             # progress_args=(reply,start_time),
         )
         # await reply.delete()
+    return msg, path
 
 
 async def download_upload_video(bot: Client, channel, video):
@@ -111,10 +115,15 @@ async def download_upload_video(bot: Client, channel, video):
         Topic: {topic}
         """
         try:
-            dl_msg = await send_video(bot, channel, filename, dedent(caption_text))
+            dl_msg, filename = await send_video(
+                bot, channel, filename, dedent(caption_text)
+            )
         except:
             dl_msg = None
-        await aiofiles.os.remove(filename)
+        try:
+            await aiofiles.os.remove(filename)
+        except:
+            pass
     try:
         return vid_id, dl_msg.message_id
     except:
