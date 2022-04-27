@@ -1,5 +1,6 @@
 """ Get video attributes and thumbnail """
 
+from __future__ import annotations
 import asyncio
 from asyncio.subprocess import PIPE
 import shlex
