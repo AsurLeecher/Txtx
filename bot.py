@@ -177,7 +177,6 @@ async def start(bot: Client, message: Message):
 
 if __name__ == "__main__":
     global bot_username
-
     bot.start()
     _bot = bot.get_me()
     bot_username = _bot.username
