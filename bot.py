@@ -5,6 +5,8 @@ import os
 import shlex
 import sys
 from textwrap import dedent
+
+from pyrogram.enums.parse_mode import ParseMode
 from aio_get_video_info import get_video_attributes, get_rcode_out_err
 import aiofiles
 import aiofiles.os
@@ -182,5 +184,6 @@ if __name__ == "__main__":
     start_msg = f"DL Server bot: @{bot_username} started"
     logger.warning(start_msg)
     bot.send_message(INTERACTION_CHANNEL, start_msg)
+    bot.set_parse_mode(ParseMode.DISABLED)
     idle()
     bot.stop()
