@@ -28,12 +28,12 @@ async def get_video_attributes(file: str):
         "ffprobe -v error -show_entries format=duration "
         + "-of default=noprint_wrappers=1:nokey=1 "
         + "-select_streams v:0 -show_entries stream=width,height "
-        + f" -of default=nw=1:nk=1 '{file}'"
+        + f" -of default=nw=1:nk=1 {shlex.quote(file)}"
     )
     cmd = shlex.split(cmd)
     rcode, out, err = await get_rcode_out_err(cmd)
     if rcode != 0:
-        raise FFprobeAttributesError(out)
+        raise FFprobeAttributesError(err)
     width, height, dur = out.split("\n")
     return (int(float(dur)), int(width), int(height))
 
@@ -49,11 +49,11 @@ async def get_video_thumb(file: str):
     dur = str(int(duration / 2))
     size = f"{width}x{height}"
     cmd = (
-        f"ffmpeg -v error -ss {dur} -i '{file}'  -vframes 1 "
+        f"ffmpeg -v error -ss {dur} -i {shlex.quote(file)}  -vframes 1 "
         + f"-s {size} {thumb_file}"
     )
     cmd = shlex.split(cmd)
     rcode, out, err = await get_rcode_out_err(cmd)
     if rcode != 0:
-        raise FFprobeThumbnailError(out)
+        raise FFprobeThumbnailError(err)
     return thumb_file
