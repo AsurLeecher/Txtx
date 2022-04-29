@@ -94,7 +94,7 @@ async def send_video(bot: Client, channel, path, caption):
                 channel,
                 document=path,
                 caption=caption,
-                # thumb=thumb,
+                thumb=thumb,
                 file_name=os.path.basename(path),
             )
         # await reply.delete()
