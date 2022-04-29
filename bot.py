@@ -78,15 +78,7 @@ async def send_video(bot: Client, channel, path, caption):
         logger.exception("Error fetching attributes")
         print(path)
         # start_time = time.time()
-        if path.endswith((".html", ".pdf")):
-            msg = await bot.send_document(
-                channel,
-                document=path,
-                caption=caption,
-                # thumb=thumb,
-                file_name=os.path.basename(path),
-            )
-        else:
+        if path.endswith((".mp4", ".mkv", ".avi", ".mov")):
             msg = await bot.send_video(
                 channel,
                 video=path,
@@ -96,6 +88,14 @@ async def send_video(bot: Client, channel, path, caption):
                 supports_streaming=True,
                 # progress=progress_bar,
                 # progress_args=(reply,start_time),
+            )
+        else:
+            msg = await bot.send_document(
+                channel,
+                document=path,
+                caption=caption,
+                # thumb=thumb,
+                file_name=os.path.basename(path),
             )
         # await reply.delete()
     return msg, path
