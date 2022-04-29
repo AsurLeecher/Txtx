@@ -53,7 +53,6 @@ async def send_video(bot: Client, channel, path, caption):
     try:
         duration, width, height = await get_video_attributes(path)
         # start_time = time.time()
-        # cmd = f"mv '{path}' '{path}.mkv'"
         try:
             await aiofiles.os.rename(path, f"{path}.mkv")
         except:
