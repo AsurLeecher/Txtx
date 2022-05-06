@@ -4,6 +4,7 @@ import logging
 import os
 import shlex
 import sys
+import traceback
 from textwrap import dedent
 
 from pyrogram.enums.parse_mode import ParseMode
@@ -12,7 +13,7 @@ import aiofiles
 import aiofiles.os
 from dotenv import load_dotenv
 from pyrogram import Client, filters, idle
-from pyrogram.types import Message
+from pyrogram.types import Message, ChatPrivileges
 import all_web_dl as awdl
 
 load_dotenv()
@@ -100,7 +101,7 @@ async def send_video(bot: Client, channel, path, caption):
     return msg, path
 
 
-async def download_upload_video(bot: Client, channel, video):
+async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
     filename, title = await awdl.download_url(
         url, vid_format, title, "", allow_drm=allow_drm
@@ -113,6 +114,7 @@ async def download_upload_video(bot: Client, channel, video):
         Url: {url}
         Title: {title}
         Topic: {topic}
+        Name: {name}
         """
         try:
             dl_msg = await bot.send_message(channel, dedent(msg_text))
@@ -123,6 +125,7 @@ async def download_upload_video(bot: Client, channel, video):
         Vid_id: {vid_id}
         Title: {title}
         Topic: {topic}
+        Name: {name}
         """
         try:
             dl_msg, filename = await send_video(
@@ -136,20 +139,44 @@ async def download_upload_video(bot: Client, channel, video):
             pass
     try:
         return vid_id, dl_msg.id
-    except:
-        print("Error sending message")
-        return vid_id, None
+    except Exception as error:
+        logger.exception(error)
+        msg_text = f"""
+        Error:
+        \n
+        Vid_id: {vid_id}
+        Url: {url}
+        Title: {title}
+        Topic: {topic}
+        Name: {name}
+        """
+        while True:
+            try:
+                dl_msg = await bot.send_message(channel, dedent(msg_text))
+            except Exception as error:
+                logger.exception(error)
+                continue
+            else:
+                if not dl_msg:
+                    continue
+                try:
+                    msg_id = dl_msg.id
+                except Exception as error:
+                    logger.exception(error)
+                    continue
+                break
+        return vid_id, dl_msg.id
 
 
-async def download_upload_video_sem(sem, bot: Client, channel, video):
+async def download_upload_video_sem(sem, bot: Client, channel, video, name):
     async with sem:
-        return await download_upload_video(bot, channel, video)
+        return await download_upload_video(bot, channel, video, name)
 
 
-async def download_upload_videos(bot: Client, channel, videos):
+async def download_upload_videos(bot: Client, channel, videos, name):
     sem = asyncio.Semaphore(4)
     dl_up_tasks = [
-        download_upload_video_sem(sem, bot, channel, video) for video in videos
+        download_upload_video_sem(sem, bot, channel, video, name) for video in videos
     ]
     downloaded_videos = await asyncio.gather(*dl_up_tasks)
     return downloaded_videos
@@ -168,7 +195,8 @@ async def download(bot: Client, message: Message):
     message_dict = json.loads(json_text)
     chat = message_dict["chat"]
     videos = message_dict["videos"]
-    downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos)
+    name = message_dict["name"]
+    downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos, name)
     done_dict = {"chat": chat, "videos": sorted(downloaded_videos)}
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
     async with aiofiles.open(done_json_file, "w", encoding="utf-8") as f:
