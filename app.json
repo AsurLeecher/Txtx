@@ -3,6 +3,18 @@
     "description":"A simple telegram userbot made using pyrogram asyncio.",
     "repository":"https://github.com/VideoMasters/downloader_server",
     "website":"https://github.com/VideoMasters/downloader_server",
+    "image": "heroku/python",
+    "buildpacks": [
+        {
+            "url": "https://github.com/amivin/aria2-heroku.git"
+        },
+        {
+            "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"
+        },
+        {
+            "url": "https://github.com/repomu/bento4bp.git"
+        }
+    ],
     "env": {
         "API_ID":{
             "description": "Get your telegram API ID from https://my.telegram.org",
