@@ -186,7 +186,8 @@ async def download_upload_videos(bot: Client, channel, videos, name):
 async def download(bot: Client, message: Message):
     global bot_username
     caption = message.caption
-    if caption.lower() != f"/download@{bot_username}".lower():
+    bot_cmd, bot_index = caption.split()
+    if bot_cmd.lower() != f"/download@{bot_username}".lower():
         return
     json_file = await message.download()
     async with aiofiles.open(json_file, "r", encoding="utf-8") as f:
@@ -201,7 +202,9 @@ async def download(bot: Client, message: Message):
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
     async with aiofiles.open(done_json_file, "w", encoding="utf-8") as f:
         await f.write(json.dumps(done_dict, indent=4))
-    await message.reply_document(done_json_file, caption=f"/copy{CLIENT_BOT}".lower())
+    await message.reply_document(
+        done_json_file, caption=f"/copy{CLIENT_BOT} {bot_index} @{bot_username}".lower()
+    )
     await aiofiles.os.remove(json_file)
     await aiofiles.os.remove(done_json_file)
 
