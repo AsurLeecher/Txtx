@@ -1,8 +1,8 @@
 {
     "name":"Downloader Server",
     "description":"A simple telegram userbot made using pyrogram asyncio.",
-    "repository":"https://github.com/VideoMasters/downloader_server",
-    "website":"https://github.com/VideoMasters/downloader_server",
+    "repository":"https://github.com/darkprince01999/downloder_server",
+    "website":"https://github.com/darkprince01999/downloder_server",
     "image": "heroku/python",
     "buildpacks": [
         {
