@@ -1,0 +1,36 @@
+{
+    "name":"Downloader Server",
+    "description":"A simple telegram userbot made using pyrogram asyncio.",
+    "repository":"https://github.com/VideoMasters/downloader_server",
+    "website":"https://github.com/VideoMasters/downloader_server",
+    "env": {
+        "API_ID":{
+            "description": "Get your telegram API ID from https://my.telegram.org",
+            "value":""
+        },
+        "API_HASH":{
+            "description":"Get your telegram API HASH from https://my.telegram.org",
+            "value":""
+        },
+        "BOT_TOKEN":{
+            "description":"Get from Bot father",
+            "value":""
+        },
+        "CLIENT_BOT":{
+            "description":"Client bot (with @)",
+            "value":""
+        },
+        "DUMP_CHANNEL":{
+            "description":"Dump Channel",
+            "value":""
+        },
+        "INTERACTION_CHANNEL":{
+            "description":"Interaction Channel",
+            "value":""
+        },
+        "THUMB":{
+            "description":"Thumb Url",
+            "value":"thumb.jpg"
+        }
+    }
+}
