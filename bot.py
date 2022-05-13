@@ -187,7 +187,10 @@ async def download_upload_videos(bot: Client, channel, videos, name):
 async def download(bot: Client, message: Message):
     global bot_username
     caption = message.caption
-    bot_cmd, bot_index = caption.split()
+    try:
+        bot_cmd, bot_index = caption.split()
+    except:
+        return
     if bot_cmd.lower() != f"/download@{bot_username}".lower():
         return
     json_file = await message.download()
@@ -201,11 +204,16 @@ async def download(bot: Client, message: Message):
     downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos, name)
     done_dict = {"chat": chat, "videos": sorted(downloaded_videos)}
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
+    print(done_json_file)
     async with aiofiles.open(done_json_file, "w", encoding="utf-8") as f:
         await f.write(json.dumps(done_dict, indent=4))
-    await message.reply_document(
-        done_json_file, caption=f"/copy{CLIENT_BOT} {bot_index} @{bot_username}".lower()
-    )
+    while True:
+        dl_json_msg = await message.reply_document(
+            done_json_file,
+            caption=f"/copy{CLIENT_BOT} {bot_index} @{bot_username}".lower(),
+        )
+        if dl_json_msg:
+            break
     await aiofiles.os.remove(json_file)
     await aiofiles.os.remove(done_json_file)
 
