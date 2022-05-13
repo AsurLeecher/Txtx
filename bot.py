@@ -104,9 +104,12 @@ async def send_video(bot: Client, channel, path, caption):
 
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
-    filename, title = await awdl.download_url(
-        url, vid_format, title, "", allow_drm=allow_drm
-    )
+    try:
+        filename, title = await awdl.download_url(
+            url, vid_format, title, "", allow_drm=allow_drm
+        )
+    except:
+        filename = None
     if not filename:
         msg_text = f"""
         Error:
