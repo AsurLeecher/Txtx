@@ -24,6 +24,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CLIENT_BOT = os.environ.get("CLIENT_BOT")
 DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL"))
 INTERACTION_CHANNEL = int(os.environ.get("INTERACTION_CHANNEL"))
+DL_NUM = int(os.environ.get("DL_NUM"))
 thumb = os.environ.get("THUMB")
 
 if thumb.startswith("http://") or thumb.startswith("https://"):
@@ -174,7 +175,7 @@ async def download_upload_video_sem(sem, bot: Client, channel, video, name):
 
 
 async def download_upload_videos(bot: Client, channel, videos, name):
-    sem = asyncio.Semaphore(4)
+    sem = asyncio.Semaphore(DL_NUM)
     dl_up_tasks = [
         download_upload_video_sem(sem, bot, channel, video, name) for video in videos
     ]
