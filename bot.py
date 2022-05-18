@@ -104,12 +104,18 @@ async def send_video(bot: Client, channel, path, caption):
 
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
-    try:
-        filename, title = await awdl.download_url(
-            url, vid_format, title, "", allow_drm=allow_drm
-        )
-    except:
-        filename = None
+    for i in range(5):
+        try:
+            filename, title = await awdl.download_url(
+                url, vid_format, title, "", allow_drm=allow_drm
+            )
+        except:
+            if i == 4:
+                filename = None
+            else:
+                continue
+        else:
+            break
     if not filename:
         msg_text = f"""
         Error:
@@ -120,10 +126,16 @@ async def download_upload_video(bot: Client, channel, video, name):
         Topic: {topic}
         Name: {name}
         """
-        try:
-            dl_msg = await bot.send_message(channel, dedent(msg_text))
-        except:
-            dl_msg = None
+        for i in range(5):
+            try:
+                dl_msg = await bot.send_message(channel, dedent(msg_text))
+            except:
+                if i == 4:
+                    dl_msg = None
+                else:
+                    continue
+            else:
+                break
     else:
         caption_text = f"""
         Vid_id: {vid_id}
@@ -131,12 +143,18 @@ async def download_upload_video(bot: Client, channel, video, name):
         Topic: {topic}
         Name: {name}
         """
-        try:
-            dl_msg, filename = await send_video(
-                bot, channel, filename, dedent(caption_text)
-            )
-        except:
-            dl_msg = None
+        for i in range(5):
+            try:
+                dl_msg, filename = await send_video(
+                    bot, channel, filename, dedent(caption_text)
+                )
+            except:
+                if i == 4:
+                    dl_msg = None
+                else:
+                    continue
+            else:
+                break
         try:
             await aiofiles.os.remove(filename)
         except:
