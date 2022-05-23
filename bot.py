@@ -76,8 +76,8 @@ async def send_video(bot: Client, channel, path, caption):
         )
         # await reply.delete()
     except:
-        logger.exception("Error fetching attributes")
-        print(path)
+        # logger.exception("Error fetching attributes")
+        # print(path)
         # start_time = time.time()
         if path.endswith((".mp4", ".mkv", ".avi", ".mov")):
             msg = await bot.send_video(
@@ -110,11 +110,8 @@ async def download_upload_video(bot: Client, channel, video, name):
                 url, vid_format, title, "", allow_drm=allow_drm
             )
         except:
-            if i == 4:
-                filename = None
-            else:
-                continue
-        else:
+            continue
+        if filename:
             break
     if not filename:
         msg_text = f"""
@@ -130,11 +127,8 @@ async def download_upload_video(bot: Client, channel, video, name):
             try:
                 dl_msg = await bot.send_message(channel, dedent(msg_text))
             except:
-                if i == 4:
-                    dl_msg = None
-                else:
-                    continue
-            else:
+                continue
+            if dl_msg:
                 break
     else:
         caption_text = f"""
@@ -149,11 +143,8 @@ async def download_upload_video(bot: Client, channel, video, name):
                     bot, channel, filename, dedent(caption_text)
                 )
             except:
-                if i == 4:
-                    dl_msg = None
-                else:
-                    continue
-            else:
+                continue
+            if dl_msg:
                 break
         try:
             await aiofiles.os.remove(filename)
@@ -178,9 +169,7 @@ async def download_upload_video(bot: Client, channel, video, name):
             except Exception as error:
                 logger.exception(error)
                 continue
-            else:
-                if not dl_msg:
-                    continue
+            if dl_msg:
                 try:
                     msg_id = dl_msg.id
                 except Exception as error:
@@ -225,7 +214,7 @@ async def download(bot: Client, message: Message):
     downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos, name)
     done_dict = {"chat": chat, "videos": sorted(downloaded_videos)}
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
-    print(done_json_file)
+    # print(done_json_file)
     async with aiofiles.open(done_json_file, "w", encoding="utf-8") as f:
         await f.write(json.dumps(done_dict, indent=4))
     while True:
@@ -235,8 +224,14 @@ async def download(bot: Client, message: Message):
         )
         if dl_json_msg:
             break
-    await aiofiles.os.remove(json_file)
-    await aiofiles.os.remove(done_json_file)
+    try:
+        await aiofiles.os.remove(json_file)
+    except:
+        pass
+    try:
+        await aiofiles.os.remove(done_json_file)
+    except:
+        pass
 
 
 @bot.on_message(filters.command("start"))
