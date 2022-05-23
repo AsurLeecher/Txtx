@@ -109,7 +109,8 @@ async def download_upload_video(bot: Client, channel, video, name):
             filename, title = await awdl.download_url(
                 url, vid_format, title, "", allow_drm=allow_drm
             )
-        except:
+        except Exception as error:
+            logger.exception(error)
             continue
         if filename:
             break
@@ -126,7 +127,8 @@ async def download_upload_video(bot: Client, channel, video, name):
         for i in range(5):
             try:
                 dl_msg = await bot.send_message(channel, dedent(msg_text))
-            except:
+            except Exception as error:
+                logger.exception(error)
                 continue
             if dl_msg:
                 break
@@ -142,13 +144,15 @@ async def download_upload_video(bot: Client, channel, video, name):
                 dl_msg, filename = await send_video(
                     bot, channel, filename, dedent(caption_text)
                 )
-            except:
+            except Exception as error:
+                logger.exception(error)
                 continue
             if dl_msg:
                 break
         try:
             await aiofiles.os.remove(filename)
-        except:
+        except Exception as error:
+            logger.exception(error)
             pass
     try:
         return vid_id, dl_msg.id
