@@ -61,6 +61,10 @@ async def send_video(bot: Client, channel, path, caption):
             pass
         else:
             path = f"{path}.mkv"
+        if os.path.exists(path):
+            pass
+        elif os.path.exists(path[:-4]):
+            path = path[:-4]
         msg = await bot.send_video(
             channel,
             video=path,
@@ -127,10 +131,8 @@ async def download_upload_video(bot: Client, channel, video, name):
                 logger.exception(error)
                 continue
             if dl_msg:
-                try:
+                if os.path.exists(filename):
                     await aiofiles.os.remove(filename)
-                except Exception as error:
-                    logger.exception(error)
                 break
     if not filename:
         msg_text = f"""
