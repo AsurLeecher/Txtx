@@ -113,7 +113,25 @@ async def download_upload_video(bot: Client, channel, video, name):
             logger.exception(error)
             continue
         if filename:
-            break
+            caption_text = f"""
+            Vid_id: {vid_id}
+            Title: {title}
+            Topic: {topic}
+            Name: {name}
+            """
+            try:
+                dl_msg, filename = await send_video(
+                    bot, channel, filename, dedent(caption_text)
+                )
+            except Exception as error:
+                logger.exception(error)
+                continue
+            if dl_msg:
+                try:
+                    await aiofiles.os.remove(filename)
+                except Exception as error:
+                    logger.exception(error)
+                break
     if not filename:
         msg_text = f"""
         Error:
@@ -132,28 +150,6 @@ async def download_upload_video(bot: Client, channel, video, name):
                 continue
             if dl_msg:
                 break
-    else:
-        caption_text = f"""
-        Vid_id: {vid_id}
-        Title: {title}
-        Topic: {topic}
-        Name: {name}
-        """
-        for i in range(5):
-            try:
-                dl_msg, filename = await send_video(
-                    bot, channel, filename, dedent(caption_text)
-                )
-            except Exception as error:
-                logger.exception(error)
-                continue
-            if dl_msg:
-                break
-        try:
-            await aiofiles.os.remove(filename)
-        except Exception as error:
-            logger.exception(error)
-            pass
     try:
         return vid_id, dl_msg.id
     except Exception as error:
