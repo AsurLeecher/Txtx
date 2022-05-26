@@ -10,6 +10,11 @@ import urllib.parse
 import urllib.request
 import urllib3
 from textwrap import dedent
+import shutil
+
+if not shutil.which("mp4decrypt"):
+    print("Install mp4decrypt first")
+    exit()
 
 from pyrogram.enums.parse_mode import ParseMode
 from aio_get_video_info import get_video_attributes, get_rcode_out_err
