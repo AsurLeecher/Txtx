@@ -57,14 +57,14 @@ async def send_video(bot: Client, channel, path, caption):
     # reply = await bot.send_message(CHANNEL, "Uploading Video")
 
     try:
+        await aiofiles.os.rename(path, f"{path}.mkv")
+    except:
+        pass
+    else:
+        path = f"{path}.mkv"
+    try:
         duration, width, height = await get_video_attributes(path)
         # start_time = time.time()
-        try:
-            await aiofiles.os.rename(path, f"{path}.mkv")
-        except:
-            pass
-        else:
-            path = f"{path}.mkv"
         if os.path.exists(path):
             pass
         elif os.path.exists(path[:-4]):
@@ -118,7 +118,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                 url, vid_format, title, "", allow_drm=allow_drm
             )
         except Exception as error:
-            logger.exception((error, url, "In downloading"))
+            logger.exception(("In downloading", error, url, vid_id, title))
             continue
         if filename:
             caption_text = f"""
@@ -132,13 +132,14 @@ async def download_upload_video(bot: Client, channel, video, name):
                     bot, channel, filename, dedent(caption_text)
                 )
             except Exception as error:
-                logger.exception((error, url, "In Uploading"))
+                logger.exception(("In Uploading", error, url, vid_id, title))
                 continue
             if dl_msg:
                 if os.path.exists(filename):
                     await aiofiles.os.remove(filename)
                 break
     if not filename:
+        logger.error(("Not Downloaded: ", url, vid_id, title))
         try:
             first = url.split("/")[:-1]
             last = url.split("/")[-1]
@@ -159,14 +160,14 @@ async def download_upload_video(bot: Client, channel, video, name):
             try:
                 dl_msg = await bot.send_message(channel, dedent(msg_text))
             except Exception as error:
-                logger.exception((error, url, "In sending error msg"))
+                logger.exception(("In sending error msg", error, url, vid_id, title))
                 continue
             if dl_msg:
                 break
     try:
         return vid_id, dl_msg.id
     except Exception as error:
-        logger.exception((error, url, "After return"))
+        logger.exception(("After return", error, url, vid_id, title))
         try:
             first = url.split("/")[:-1]
             last = url.split("/")[-1]
@@ -187,13 +188,17 @@ async def download_upload_video(bot: Client, channel, video, name):
             try:
                 dl_msg = await bot.send_message(channel, dedent(msg_text))
             except Exception as error:
-                logger.exception((error, url, "After return: sending msg"))
+                logger.exception(
+                    ("After return: sending msg", error, url, vid_id, title)
+                )
                 continue
             if dl_msg:
                 try:
                     msg_id = dl_msg.id
                 except Exception as error:
-                    logger.exception((error, url, "After return: msg_id", dl_msg))
+                    logger.exception(
+                        ("After return: msg_id", error, url, vid_id, title, dl_msg)
+                    )
                     continue
                 break
         return vid_id, dl_msg.id
