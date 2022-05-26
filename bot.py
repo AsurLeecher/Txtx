@@ -57,18 +57,21 @@ async def send_video(bot: Client, channel, path, caption):
     # reply = await bot.send_message(CHANNEL, "Uploading Video")
 
     try:
-        await aiofiles.os.rename(path, f"{path}.mkv")
-    except:
-        pass
-    else:
-        path = f"{path}.mkv"
-    try:
         duration, width, height = await get_video_attributes(path)
         # start_time = time.time()
+
+        if not path.endswith(".mkv"):
+            try:
+                await aiofiles.os.rename(path, f"{path}.mkv")
+            except:
+                pass
+            else:
+                path = f"{path}.mkv"
         if os.path.exists(path):
             pass
         elif os.path.exists(path[:-4]):
             path = path[:-4]
+
         msg = await bot.send_video(
             channel,
             video=path,
@@ -88,6 +91,17 @@ async def send_video(bot: Client, channel, path, caption):
         # print(path)
         # start_time = time.time()
         if path.endswith((".mp4", ".mkv", ".avi", ".mov")):
+            if not path.endswith(".mkv"):
+                try:
+                    await aiofiles.os.rename(path, f"{path}.mkv")
+                except:
+                    pass
+                else:
+                    path = f"{path}.mkv"
+            if os.path.exists(path):
+                pass
+            elif os.path.exists(path[:-4]):
+                path = path[:-4]
             msg = await bot.send_video(
                 channel,
                 video=path,
