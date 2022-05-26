@@ -133,7 +133,7 @@ async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
     for i in range(5):
         try:
-            filename, title = await awdl.download_url(
+            filename, title_ = await awdl.download_url(
                 url, vid_format, title, "", allow_drm=allow_drm
             )
         except Exception as error:
@@ -157,6 +157,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                 if os.path.exists(filename):
                     await aiofiles.os.remove(filename)
                 break
+        logger.error(("No filename", url, vid_id, title))
     if not filename:
         logger.error(("Not Downloaded: ", url, vid_id, title))
         try:
