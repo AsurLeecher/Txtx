@@ -112,13 +112,6 @@ async def send_video(bot: Client, channel, path, caption):
 
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
-    try:
-        first = url.split("/")[:-1]
-        last = url.split("/")[-1]
-        last_encoded = urllib.parse.quote(last)
-        url = "/".join(first) + "/" + last_encoded
-    except:
-        pass
     for i in range(5):
         try:
             filename, title = await awdl.download_url(
@@ -146,6 +139,13 @@ async def download_upload_video(bot: Client, channel, video, name):
                     await aiofiles.os.remove(filename)
                 break
     if not filename:
+        try:
+            first = url.split("/")[:-1]
+            last = url.split("/")[-1]
+            last_encoded = urllib.parse.quote(last)
+            url = "/".join(first) + "/" + last_encoded
+        except:
+            pass
         msg_text = f"""
         Error:
         \n
@@ -167,6 +167,13 @@ async def download_upload_video(bot: Client, channel, video, name):
         return vid_id, dl_msg.id
     except Exception as error:
         logger.exception((error, url, "After return"))
+        try:
+            first = url.split("/")[:-1]
+            last = url.split("/")[-1]
+            last_encoded = urllib.parse.quote(last)
+            url = "/".join(first) + "/" + last_encoded
+        except:
+            pass
         msg_text = f"""
         Error:
         \n
