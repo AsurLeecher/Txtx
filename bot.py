@@ -131,6 +131,7 @@ async def send_video(bot: Client, channel, path, caption):
 
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
+    success = False
     for i in range(5):
         try:
             filename, title_ = await awdl.download_url(
@@ -156,6 +157,7 @@ async def download_upload_video(bot: Client, channel, video, name):
             if dl_msg:
                 if os.path.exists(filename):
                     await aiofiles.os.remove(filename)
+                success = True
                 break
         logger.error(("No filename", url, vid_id, title))
     if not filename:
@@ -185,7 +187,7 @@ async def download_upload_video(bot: Client, channel, video, name):
             if dl_msg:
                 break
     try:
-        return vid_id, dl_msg.id
+        return vid_id, dl_msg.id, success
     except Exception as error:
         logger.exception(("After return", error, url, vid_id, title))
         try:
@@ -221,7 +223,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                     )
                     continue
                 break
-        return vid_id, dl_msg.id
+        return vid_id, dl_msg.id, success
 
 
 async def download_upload_video_sem(sem, bot: Client, channel, video, name):
