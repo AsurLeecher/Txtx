@@ -132,6 +132,7 @@ async def send_video(bot: Client, channel, path, caption):
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
     success = False
+    filename = None
     for i in range(5):
         try:
             filename, title_ = await awdl.download_url(
