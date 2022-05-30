@@ -163,12 +163,20 @@ async def download_upload_video(bot: Client, channel, video, name):
     if not filename:
         logger.error(("Not Downloaded: ", url, vid_id, title))
         try:
-            first = url.split("/")[:-1]
-            last = url.split("/")[-1]
-            last_encoded = urllib.parse.quote(last)
-            url = "/".join(first) + "/" + last_encoded
+            parts = urllib.parse.urlparse(url)
+            queries = urllib.parse.parse_qsl(parts.query)
+            uq = urllib.parse.urlencode(queries)
+            up = urllib.parse.quote(parts.path)
+            url = parts._replace(query=uq, path=up).geturl()
         except:
             pass
+        # try:
+        #     first = url.split("/")[:-1]
+        #     last = url.split("/")[-1]
+        #     last_encoded = urllib.parse.quote(last)
+        #     url = "/".join(first) + "/" + last_encoded
+        # except:
+        #     pass
         msg_text = f"""
         Error:
         \n
@@ -191,12 +199,20 @@ async def download_upload_video(bot: Client, channel, video, name):
     except Exception as error:
         logger.exception(("After return", error, url, vid_id, title))
         try:
-            first = url.split("/")[:-1]
-            last = url.split("/")[-1]
-            last_encoded = urllib.parse.quote(last)
-            url = "/".join(first) + "/" + last_encoded
+            parts = urllib.parse.urlparse(url)
+            queries = urllib.parse.parse_qsl(parts.query)
+            uq = urllib.parse.urlencode(queries)
+            up = urllib.parse.quote(parts.path)
+            url = parts._replace(query=uq, path=up).geturl()
         except:
             pass
+        # try:
+        #     first = url.split("/")[:-1]
+        #     last = url.split("/")[-1]
+        #     last_encoded = urllib.parse.quote(last)
+        #     url = "/".join(first) + "/" + last_encoded
+        # except:
+        #     pass
         msg_text = f"""
         Error:
         \n
