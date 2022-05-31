@@ -16,6 +16,7 @@ if not shutil.which("mp4decrypt"):
     print("Install mp4decrypt first")
     exit()
 
+import aiohttp
 from pyrogram.enums.parse_mode import ParseMode
 from aio_get_video_info import get_video_attributes, get_rcode_out_err
 import aiofiles
@@ -31,6 +32,7 @@ API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CLIENT_BOT = os.environ.get("CLIENT_BOT")
+VIDEO_DB_API = os.environ.get("VIDEO_DB_API")
 DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL"))
 INTERACTION_CHANNEL = int(os.environ.get("INTERACTION_CHANNEL"))
 DL_NUM = int(os.environ.get("DL_NUM"))
@@ -129,8 +131,81 @@ async def send_video(bot: Client, channel, path, caption):
     return msg, path
 
 
+async def get_msg_from_db(url, vid_format):
+    data = json.dumps({"url": url, "vid_format": vid_format})
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(VIDEO_DB_API, data=data) as resp:
+                resp_dict = await resp.json(content_type=None)
+    except Exception as error:
+        logging.exception(("In msg from db", error, url, vid_format))
+        msg_id = None
+    else:
+        try:
+            msg_id = resp_dict["msg_id"]
+        except:
+            msg_id = None
+    return msg_id
+
+
+async def add_msg_to_db(url, vid_format, msg_id):
+    data = json.dumps({"url": url, "vid_format": vid_format, "msg_id": msg_id})
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(VIDEO_DB_API, data=data) as resp:
+                resp_dict = await resp.json(content_type=None)
+    except Exception as error:
+        logging.exception(("In msg to db", error, url, vid_format, msg_id))
+        success = False
+    else:
+        try:
+            success = resp_dict["success"]
+        except:
+            success = False
+    return success
+
+
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
+    prev_msg_id = await get_msg_from_db(url, vid_format)
+    if prev_msg_id:
+        while True:
+            caption_text = f"""
+            Vid_id: {vid_id}
+            Title: {title}
+            Topic: {topic}
+            Name: {name}
+            """
+            try:
+                dl_msg = await bot.copy_message(
+                    channel,
+                    DUMP_CHANNEL,
+                    prev_msg_id,
+                    caption=dedent(caption_text),
+                )
+            except Exception as error:
+                logging.exception(
+                    ("In copying", error, url, vid_format, vid_id, title, prev_msg_id)
+                )
+                continue
+            if dl_msg:
+                try:
+                    msg_id = dl_msg.id
+                except Exception as error:
+                    logging.exception(
+                        (
+                            "In copying: msg_id",
+                            error,
+                            url,
+                            vid_format,
+                            vid_id,
+                            title,
+                            prev_msg_id,
+                        )
+                    )
+                    continue
+                break
+        return vid_id, msg_id, True
     success = False
     filename = None
     for i in range(5):
@@ -141,25 +216,34 @@ async def download_upload_video(bot: Client, channel, video, name):
         except Exception as error:
             logger.exception(("In downloading", error, url, vid_id, title))
             continue
-        if filename:
-            caption_text = f"""
-            Vid_id: {vid_id}
-            Title: {title}
-            Topic: {topic}
-            Name: {name}
-            """
-            try:
-                dl_msg, filename = await send_video(
-                    bot, channel, filename, dedent(caption_text)
-                )
-            except Exception as error:
-                logger.exception(("In Uploading", error, url, vid_id, title))
-                continue
-            if dl_msg:
-                if os.path.exists(filename):
-                    await aiofiles.os.remove(filename)
-                success = True
-                break
+        if filename and os.path.exists(filename):
+            while True:
+                caption_text = f"""
+                Vid_id: {vid_id}
+                Title: {title}
+                Topic: {topic}
+                Name: {name}
+                """
+                try:
+                    dl_msg, filename = await send_video(
+                        bot, channel, filename, dedent(caption_text)
+                    )
+                except Exception as error:
+                    logger.exception(("In Uploading", error, url, vid_id, title))
+                    continue
+                if dl_msg:
+                    try:
+                        msg_id = dl_msg.id
+                    except Exception as error:
+                        logging.exception(
+                            ("In uploading: msg_id", error, url, vid_id, title)
+                        )
+                        continue
+                    break
+            if os.path.exists(filename):
+                await aiofiles.os.remove(filename)
+            success = True
+            break
         logger.error(("No filename", url, vid_id, title))
     if not filename:
         logger.error(("Not Downloaded: ", url, vid_id, title))
@@ -168,9 +252,9 @@ async def download_upload_video(bot: Client, channel, video, name):
             queries = urllib.parse.parse_qsl(parts.query)
             uq = urllib.parse.urlencode(queries)
             up = urllib.parse.quote(parts.path)
-            url = parts._replace(query=uq, path=up).geturl()
+            url_ = parts._replace(query=uq, path=up).geturl()
         except:
-            pass
+            url_ = url
         # try:
         #     first = url.split("/")[:-1]
         #     last = url.split("/")[-1]
@@ -182,43 +266,7 @@ async def download_upload_video(bot: Client, channel, video, name):
         Error:
         \n
         Vid_id: {vid_id}
-        Url: {url}
-        Title: {title}
-        Topic: {topic}
-        Name: {name}
-        """
-        for i in range(5):
-            try:
-                dl_msg = await bot.send_message(channel, dedent(msg_text))
-            except Exception as error:
-                logger.exception(("In sending error msg", error, url, vid_id, title))
-                continue
-            if dl_msg:
-                break
-    try:
-        return vid_id, dl_msg.id, success
-    except Exception as error:
-        logger.exception(("After return", error, url, vid_id, title))
-        try:
-            parts = urllib.parse.urlparse(url)
-            queries = urllib.parse.parse_qsl(parts.query)
-            uq = urllib.parse.urlencode(queries)
-            up = urllib.parse.quote(parts.path)
-            url = parts._replace(query=uq, path=up).geturl()
-        except:
-            pass
-        # try:
-        #     first = url.split("/")[:-1]
-        #     last = url.split("/")[-1]
-        #     last_encoded = urllib.parse.quote(last)
-        #     url = "/".join(first) + "/" + last_encoded
-        # except:
-        #     pass
-        msg_text = f"""
-        Error:
-        \n
-        Vid_id: {vid_id}
-        Url: {url}
+        Url: {url_}
         Title: {title}
         Topic: {topic}
         Name: {name}
@@ -227,20 +275,20 @@ async def download_upload_video(bot: Client, channel, video, name):
             try:
                 dl_msg = await bot.send_message(channel, dedent(msg_text))
             except Exception as error:
-                logger.exception(
-                    ("After return: sending msg", error, url, vid_id, title)
-                )
+                logger.exception(("In sending error msg", error, url, vid_id, title))
                 continue
             if dl_msg:
                 try:
                     msg_id = dl_msg.id
                 except Exception as error:
-                    logger.exception(
-                        ("After return: msg_id", error, url, vid_id, title, dl_msg)
+                    logging.exception(
+                        ("In sending error msg: msg_id", error, url, vid_id, title)
                     )
                     continue
                 break
-        return vid_id, dl_msg.id, success
+    if success:
+        await add_msg_to_db(url, vid_format, msg_id)
+    return vid_id, msg_id, success
 
 
 async def download_upload_video_sem(sem, bot: Client, channel, video, name):
