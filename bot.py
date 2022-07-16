@@ -18,7 +18,7 @@ if not shutil.which("mp4decrypt"):
 
 import aiohttp
 from pyrogram.enums.parse_mode import ParseMode
-from aio_get_video_info import get_video_attributes, get_rcode_out_err
+from aio_get_video_info import get_video_attributes, get_video_thumb
 import aiofiles
 import aiofiles.os
 from dotenv import load_dotenv
@@ -40,6 +40,7 @@ thumb = os.environ.get("THUMB")
 
 if thumb.startswith("http://") or thumb.startswith("https://"):
     cmd = f"wget '{thumb}' -O 'thumb.jpg'"
+    os.system(cmd)
     thumb = "thumb.jpg"
 
 
@@ -64,6 +65,15 @@ async def send_video(bot: Client, channel, path, caption):
     # reply = await bot.send_message(CHANNEL, "Uploading Video")
 
     try:
+        if not thumb:
+            thumb_to_send = await get_video_thumb(path)
+        else:
+            thumb_to_send = thumb
+    except:
+        logger.exception("Error generating thumbnail")
+        thumb_to_send = "thumb.jpg"
+
+    try:
         duration, width, height = await get_video_attributes(path)
         # start_time = time.time()
 
@@ -86,7 +96,7 @@ async def send_video(bot: Client, channel, path, caption):
             duration=duration,
             width=width,
             height=height,
-            thumb=thumb,
+            thumb=thumb_to_send,
             file_name=os.path.basename(path),
             supports_streaming=True,
             # progress=progress_bar,
@@ -113,7 +123,7 @@ async def send_video(bot: Client, channel, path, caption):
                 channel,
                 video=path,
                 caption=caption,
-                thumb=thumb,
+                thumb=thumb_to_send,
                 file_name=os.path.basename(path),
                 supports_streaming=True,
                 # progress=progress_bar,
@@ -124,7 +134,7 @@ async def send_video(bot: Client, channel, path, caption):
                 channel,
                 document=path,
                 caption=caption,
-                thumb=thumb,
+                thumb=thumb_to_send,
                 file_name=os.path.basename(path),
             )
         # await reply.delete()
