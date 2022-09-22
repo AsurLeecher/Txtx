@@ -70,7 +70,7 @@ async def send_video(bot: Client, channel, path, caption):
         else:
             thumb_to_send = thumb
     except:
-        logger.exception("Error generating thumbnail")
+        # logger.exception("Error generating thumbnail")
         thumb_to_send = "thumb.jpg"
 
     try:
