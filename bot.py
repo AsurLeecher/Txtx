@@ -77,18 +77,6 @@ async def send_video(bot: Client, channel, path, caption):
         duration, width, height = await get_video_attributes(path)
         # start_time = time.time()
 
-        if not path.endswith(".mkv"):
-            try:
-                await aiofiles.os.rename(path, f"{path}.mkv")
-            except:
-                pass
-            else:
-                path = f"{path}.mkv"
-        if os.path.exists(path):
-            pass
-        elif os.path.exists(path[:-4]):
-            path = path[:-4]
-
         msg = await bot.send_video(
             channel,
             video=path,
@@ -108,17 +96,6 @@ async def send_video(bot: Client, channel, path, caption):
         # print(path)
         # start_time = time.time()
         if path.endswith((".mp4", ".mkv", ".avi", ".mov")):
-            if not path.endswith(".mkv"):
-                try:
-                    await aiofiles.os.rename(path, f"{path}.mkv")
-                except:
-                    pass
-                else:
-                    path = f"{path}.mkv"
-            if os.path.exists(path):
-                pass
-            elif os.path.exists(path[:-4]):
-                path = path[:-4]
             msg = await bot.send_video(
                 channel,
                 video=path,
@@ -175,6 +152,17 @@ async def add_msg_to_db(url, vid_format, msg_id):
     return success
 
 
+async def rename_to_mkv(filename: str):
+    if filename.endswith(".mp4"):
+        ft = filename[:-4]
+        fn = f"{ft}.mkv"
+        await aiofiles.os.rename(filename, fn)
+        if not os.path.exists(fn):
+            raise Exception("Renaming Error")
+        return fn
+    return filename
+
+
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm = video
     prev_msg_id = await get_msg_from_db(url, vid_format)
@@ -227,6 +215,7 @@ async def download_upload_video(bot: Client, channel, video, name):
             logger.exception(("In downloading", error, url, vid_id, title))
             continue
         if filename and os.path.exists(filename):
+            filename = await rename_to_mkv(filename)
             while True:
                 caption_text = f"""
                 Vid_id: {vid_id}
