@@ -154,7 +154,7 @@ async def add_msg_to_db(url, vid_format, msg_id):
 
 async def rename_to_mkv(filename: str):
     if filename.endswith(".mp4"):
-        ft = filename.removesuffix(".mp4")
+        ft = filename[:-4]
         fn = f"{ft}.mkv"
         await aiofiles.os.rename(filename, fn)
         if not os.path.exists(fn):
