@@ -3,6 +3,7 @@
 from __future__ import annotations
 import asyncio
 from asyncio.subprocess import PIPE
+import os
 import shlex
 import tempfile
 from subprocess import getstatusoutput
@@ -56,4 +57,14 @@ async def get_video_thumb(file: str):
     rcode, out, err = await get_rcode_out_err(cmd)
     if rcode != 0:
         raise FFprobeThumbnailError(err)
+    if not os.path.exists(thumb_file):
+        for i in range(1, 11, 100):
+            cmd = f"ffmpeg -v error -ss {i*100} -i {shlex.quote(file)}  -vframes 1 -s {size} {thumb_file}"
+            cmd = shlex.split(cmd)
+            rcode, out, err = await get_rcode_out_err(cmd)
+            if rcode != 0:
+                raise FFprobeThumbnailError(err)
+            if os.path.exists(thumb_file):
+                return thumb_file
+        raise FFprobeThumbnailError("Couldn't generate thumbnail.")
     return thumb_file
