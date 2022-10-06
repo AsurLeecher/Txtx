@@ -164,8 +164,9 @@ async def rename_to_mkv(filename: str):
 
 
 async def download_upload_video(bot: Client, channel, video, name):
-    vid_id, url, vid_format, title, topic, allow_drm = video
+    vid_id, url, vid_format, title, topic, allow_drm, keys = video
     prev_msg_id = await get_msg_from_db(url, vid_format)
+    # prev_msg_id = None
     if prev_msg_id:
         while True:
             caption_text = f"""
@@ -209,7 +210,7 @@ async def download_upload_video(bot: Client, channel, video, name):
     for i in range(5):
         try:
             filename, title_ = await awdl.download_url(
-                url, vid_format, title, "", allow_drm=allow_drm
+                url, vid_format, title, "", allow_drm=allow_drm, keys=keys
             )
         except Exception as error:
             logger.exception(("In downloading", error, url, vid_id, title))
