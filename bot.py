@@ -18,7 +18,7 @@ if not shutil.which("mp4decrypt"):
 
 import aiohttp
 from pyrogram.enums.parse_mode import ParseMode
-from aio_get_video_info import get_video_attributes, get_video_thumb
+from aio_get_video_info import get_video_attributes, get_video_thumb, to_mkv
 import aiofiles
 import aiofiles.os
 from dotenv import load_dotenv
@@ -152,17 +152,6 @@ async def add_msg_to_db(url, vid_format, msg_id):
     return success
 
 
-async def rename_to_mkv(filename: str):
-    if filename.endswith(".mp4"):
-        ft = filename[:-4]
-        fn = f"{ft}.mkv"
-        await aiofiles.os.rename(filename, fn)
-        if not os.path.exists(fn):
-            raise Exception("Renaming Error")
-        return fn
-    return filename
-
-
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm, keys = video
     prev_msg_id = await get_msg_from_db(url, vid_format)
@@ -216,7 +205,7 @@ async def download_upload_video(bot: Client, channel, video, name):
             logger.exception(("In downloading", error, url, vid_id, title))
             continue
         if filename and os.path.exists(filename):
-            filename = await rename_to_mkv(filename)
+            filename = await to_mkv(filename)
             while True:
                 caption_text = f"""
                 Vid_id: {vid_id}
