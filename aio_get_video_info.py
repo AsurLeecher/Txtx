@@ -68,3 +68,19 @@ async def get_video_thumb(file: str):
                 return thumb_file
         raise FFprobeThumbnailError("Couldn't generate thumbnail.")
     return thumb_file
+
+
+async def to_mkv(file: str):
+    """Converts to mkv"""
+    if file.endswith((".mkv", ".mp4")):
+        ft = file[:-4]
+        fn = f"{ft}.mkv"
+        cmd = f"ffmpeg -i {shlex.quote(file)} -map 0 -f matroska -cues_to_front true -c copy {shlex.quote(fn)}"
+        cmd = shlex.split(cmd)
+        rcode, out, err = await get_rcode_out_err(cmd)
+        if rcode != 0:
+            raise Exception(("Mkv ffmpeg Error: ", file, fn, err))
+        if not os.path.exists(fn):
+            raise Exception(("Renaming Error: ", file, fn))
+        return fn
+    return file
