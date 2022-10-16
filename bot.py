@@ -204,7 +204,7 @@ async def download_upload_video(bot: Client, channel, video, name):
         except Exception as error:
             logger.exception(("In downloading", error, url, vid_id, title))
             continue
-        if filename and os.path.exists(filename):
+        if filename and os.path.exists(filename) and os.stat(filename).st_size:
             filename = await to_mkv(filename)
             while True:
                 caption_text = f"""
@@ -233,7 +233,14 @@ async def download_upload_video(bot: Client, channel, video, name):
                 await aiofiles.os.remove(filename)
             success = True
             break
-        logger.error(("No filename", url, vid_id, title))
+        elif not filename:
+            logger.error(("No filename", url, vid_id, title))
+        elif not os.path.exists(filename):
+            filename = None
+            logger.error(("File don't exists", url, vid_id, title))
+        elif not os.stat(filename).st_size:
+            filename = None
+            logger.error(("File size 0", url, vid_id, title))
     if not filename:
         logger.error(("Not Downloaded: ", url, vid_id, title))
         try:
