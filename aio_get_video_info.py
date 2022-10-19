@@ -6,7 +6,7 @@ from asyncio.subprocess import PIPE
 import os
 import shlex
 import tempfile
-from subprocess import getstatusoutput
+import aiofiles
 
 
 async def get_rcode_out_err(cmd: list[str]):
@@ -72,12 +72,14 @@ async def get_video_thumb(file: str):
 
 async def to_mkv(file: str):
     """Converts to mkv"""
-    if file.endswith((".mkv", ".mp4")):
+    if file.endswith(".mp4"):
         ft = file[:-4]
         fn = f"{ft}.mkv"
         cmd = f"ffmpeg -i {shlex.quote(file)} -map 0 -f matroska -cues_to_front true -c copy {shlex.quote(fn)}"
         cmd = shlex.split(cmd)
         rcode, out, err = await get_rcode_out_err(cmd)
+        if os.path.exists(file):
+            await aiofiles.os.remove(file)
         if rcode != 0:
             raise Exception(("Mkv ffmpeg Error: ", file, fn, err))
         if not os.path.exists(fn):
