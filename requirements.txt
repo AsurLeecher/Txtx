@@ -5,3 +5,4 @@ PySocks==1.7.1
 python-dotenv==0.20.0
 TgCrypto==1.2.3
 https://git.deshdeepak.xyz/deshdeepak/drm-dl/archive/latest.zip
+motor==3.0.0
