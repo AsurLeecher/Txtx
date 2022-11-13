@@ -75,7 +75,7 @@ async def to_mkv(file: str):
     if file.endswith(".mp4"):
         ft = file[:-4]
         fn = f"{ft}.mkv"
-        cmd = f"ffmpeg -i {shlex.quote(file)} -map 0 -f matroska -cues_to_front true -c copy {shlex.quote(fn)}"
+        cmd = f"ffmpeg -y -i {shlex.quote(file)} -map 0 -f matroska -cues_to_front true -c copy {shlex.quote(fn)}"
         cmd = shlex.split(cmd)
         rcode, out, err = await get_rcode_out_err(cmd)
         if os.path.exists(file):
