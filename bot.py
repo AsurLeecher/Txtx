@@ -21,6 +21,9 @@ from dotenv import load_dotenv
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message, ChatPrivileges
 import all_web_dl as awdl
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+
+import realurls
 
 load_dotenv()
 
@@ -28,7 +31,8 @@ API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CLIENT_BOT = os.environ.get("CLIENT_BOT")
-VIDEO_DB_API = os.environ.get("VIDEO_DB_API")
+DB_URL = os.environ.get("DB_URL")
+DEBUG = os.environ.get("DEBUG", True) != "false"
 DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL"))
 INTERACTION_CHANNEL = int(os.environ.get("INTERACTION_CHANNEL"))
 DL_NUM = int(os.environ.get("DL_NUM"))
@@ -115,44 +119,39 @@ async def send_video(bot: Client, channel, path, caption):
 
 
 async def get_msg_from_db(url, vid_format):
-    data = json.dumps({"url": url, "vid_format": vid_format})
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(VIDEO_DB_API, data=data) as resp:
-                resp_dict = await resp.json(content_type=None)
-    except Exception as error:
-        logging.exception(("In msg from db", error, url, vid_format))
-        msg_id = None
-    else:
-        try:
-            msg_id = resp_dict["msg_id"]
-        except:
-            msg_id = None
-    return msg_id
+    client = AsyncIOMotorClient(DB_URL)
+    db_name = "downloaded"
+    if DEBUG:
+        db_name += "_test"
+    db = client[db_name]
+    collection = db["videos"]
+    url, vid_format = realurls.real_url(url, vid_format)
+    video = await collection.find_one({"url": url, "vid_format": vid_format})
+    if not video:
+        return
+    return video["msg"]
 
 
 async def add_msg_to_db(url, vid_format, msg_id):
-    data = json.dumps({"url": url, "vid_format": vid_format, "msg_id": msg_id})
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(VIDEO_DB_API, data=data) as resp:
-                resp_dict = await resp.json(content_type=None)
-    except Exception as error:
-        logging.exception(("In msg to db", error, url, vid_format, msg_id))
-        success = False
-    else:
-        try:
-            success = resp_dict["success"]
-        except:
-            success = False
-    return success
+    client = AsyncIOMotorClient(DB_URL)
+    db_name = "downloaded"
+    if DEBUG:
+        db_name += "_test"
+    db = client[db_name]
+    collection = db["videos"]
+    url, vid_format = realurls.real_url(url, vid_format)
+    result = await collection.insert_one(
+        {"url": url, "vid_format": vid_format, "msg": [DUMP_CHANNEL, msg_id]}
+    )
+    return result.acknowledged
 
 
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm, keys = video
-    prev_msg_id = await get_msg_from_db(url, vid_format)
+    prev_msg = await get_msg_from_db(url, vid_format)
     # prev_msg_id = None
-    if prev_msg_id:
+    if prev_msg:
+        prev_chat, prev_msg_id = prev_msg
         while True:
             caption_text = f"""
             Vid_id: {vid_id}
@@ -163,7 +162,7 @@ async def download_upload_video(bot: Client, channel, video, name):
             try:
                 dl_msg = await bot.copy_message(
                     channel,
-                    DUMP_CHANNEL,
+                    prev_chat,
                     prev_msg_id,
                     caption=dedent(caption_text),
                 )
@@ -189,7 +188,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                     )
                     continue
                 break
-        return vid_id, msg_id, True
+        return vid_id, (prev_chat, msg_id), True
     success = False
     filename = None
     for i in range(5):
@@ -280,7 +279,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                 break
     if success:
         await add_msg_to_db(url, vid_format, msg_id)
-    return vid_id, msg_id, success
+    return vid_id, (DUMP_CHANNEL, msg_id), success
 
 
 async def download_upload_video_sem(sem, bot: Client, channel, video, name):
