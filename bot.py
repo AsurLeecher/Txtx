@@ -188,7 +188,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                     )
                     continue
                 break
-        return vid_id, (prev_chat, msg_id), True
+        return vid_id, (channel, msg_id), True
     success = False
     filename = None
     for i in range(5):
