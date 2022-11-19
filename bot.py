@@ -194,7 +194,7 @@ async def download_upload_video(bot: Client, channel, video, name):
     for i in range(5):
         try:
             filename, title_ = await awdl.download_url(
-                url, vid_format, title, "", allow_drm=allow_drm, keys=keys
+                url, vid_format, title, topic, dl_path=f"./downloads/{name}", allow_drm=allow_drm, keys=keys
             )
         except Exception as error:
             logger.exception(("In downloading", error, url, vid_id, title))
