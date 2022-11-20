@@ -149,6 +149,7 @@ async def add_msg_to_db(url, vid_format, msg_id):
 async def download_upload_video(bot: Client, channel, video, name):
     vid_id, url, vid_format, title, topic, allow_drm, keys = video
     prev_msg = await get_msg_from_db(url, vid_format)
+    # print(prev_msg)
     # prev_msg_id = None
     if prev_msg:
         prev_chat, prev_msg_id = prev_msg
@@ -194,7 +195,7 @@ async def download_upload_video(bot: Client, channel, video, name):
     for i in range(5):
         try:
             filename, title_ = await awdl.download_url(
-                url, vid_format, title, topic, dl_path=f"./downloads/{name}", allow_drm=allow_drm, keys=keys
+                url, vid_format, title, dl_path=f"./downloads/{vid_id}", allow_drm=allow_drm, keys=keys
             )
         except Exception as error:
             logger.exception(("In downloading", error, url, vid_id, title))
