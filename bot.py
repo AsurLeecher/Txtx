@@ -24,6 +24,7 @@ from pyrogram.types import ChatPrivileges, Message
 
 import realurls
 from aio_get_video_info import get_video_attributes, get_video_thumb, to_mkv
+from splitter import splitVideoSize
 
 load_dotenv()
 
@@ -153,42 +154,85 @@ async def download_upload_video(bot: Client, channel, video, name):
     # prev_msg_id = None
     if prev_msg:
         prev_chat, prev_msg_id = prev_msg
-        while True:
-            caption_text = f"""
-            Vid_id: {vid_id}
-            Title: {title}
-            Topic: {topic}
-            Name: {name}
-            """
-            try:
-                dl_msg = await bot.copy_message(
-                    channel,
-                    prev_chat,
-                    prev_msg_id,
-                    caption=dedent(caption_text),
-                )
-            except Exception as error:
-                logging.exception(
-                    ("In copying", error, url, vid_format, vid_id, title, prev_msg_id)
-                )
-                continue
-            if dl_msg:
+        if isinstance(prev_msg_id, list):
+            msg_id = []
+            for part, prev_part_msg_id in enumerate(prev_msg_id, 1):
+                while True:
+                    caption_text = f"""
+                    Part: {part}
+                    Vid_id: {vid_id}
+                    Title: {title}
+                    Topic: {topic}
+                    Name: {name}
+                    """
+                    try:
+                        dl_msg = await bot.copy_message(
+                            channel,
+                            prev_chat,
+                            prev_part_msg_id,
+                            caption=dedent(caption_text),
+                        )
+                    except Exception as error:
+                        logging.exception(
+                            ("In copying", error, url, vid_format, vid_id, title, prev_part_msg_id, part)
+                        )
+                        continue
+                    if dl_msg:
+                        try:
+                            part_msg_id = dl_msg.id
+                        except Exception as error:
+                            logging.exception(
+                                (
+                                    "In copying: msg_id",
+                                    error,
+                                    url,
+                                    vid_format,
+                                    vid_id,
+                                    title,
+                                    prev_part_msg_id,
+                                    part,
+                                )
+                            )
+                            continue
+                        msg_id.append(part_msg_id)
+                        break
+        else:
+            while True:
+                caption_text = f"""
+                Vid_id: {vid_id}
+                Title: {title}
+                Topic: {topic}
+                Name: {name}
+                """
                 try:
-                    msg_id = dl_msg.id
+                    dl_msg = await bot.copy_message(
+                        channel,
+                        prev_chat,
+                        prev_msg_id,
+                        caption=dedent(caption_text),
+                    )
                 except Exception as error:
                     logging.exception(
-                        (
-                            "In copying: msg_id",
-                            error,
-                            url,
-                            vid_format,
-                            vid_id,
-                            title,
-                            prev_msg_id,
-                        )
+                        ("In copying", error, url, vid_format, vid_id, title, prev_msg_id)
                     )
                     continue
-                break
+                if dl_msg:
+                    try:
+                        msg_id = dl_msg.id
+                    except Exception as error:
+                        logging.exception(
+                            (
+                                "In copying: msg_id",
+                                error,
+                                url,
+                                vid_format,
+                                vid_id,
+                                title,
+                                prev_msg_id,
+                            )
+                        )
+                        continue
+                    break
         return vid_id, (channel, msg_id), True
     success = False
     filename = None
@@ -207,33 +251,79 @@ async def download_upload_video(bot: Client, channel, video, name):
             continue
         if filename and os.path.exists(filename) and os.stat(filename).st_size:
             filename = await to_mkv(filename)
-            while True:
-                caption_text = f"""
-                Vid_id: {vid_id}
-                Title: {title}
-                Topic: {topic}
-                Name: {name}
-                """
-                try:
-                    dl_msg, filename = await send_video(
-                        bot, channel, filename, dedent(caption_text)
-                    )
-                except Exception as error:
-                    logger.exception(("In Uploading", error, url, vid_id, title))
-                    continue
-                if dl_msg:
+            file_size = os.stat(filename).st_size
+            if file_size > 2_000_000_000:
+                files = await splitVideoSize(filename)
+                msg_id = []
+                for part, file in enumerate(files, 1):
+                    while True:
+                        caption_text = f"""
+                        Part: {part}
+                        Vid_id: {vid_id}
+                        Title: {title}
+                        Topic: {topic}
+                        Name: {name}
+                        """
+                        try:
+                            dl_msg, file = await send_video(
+                                bot, channel, file, dedent(caption_text)
+                            )
+                        except Exception as error:
+                            logger.exception(
+                                ("In Uploading", error, url, vid_id, title, part)
+                            )
+                            continue
+                        if dl_msg:
+                            try:
+                                part_msg_id = dl_msg.id
+                            except Exception as error:
+                                logging.exception(
+                                    (
+                                        "In uploading: msg_id",
+                                        error,
+                                        url,
+                                        vid_id,
+                                        title,
+                                        part,
+                                    )
+                                )
+                                continue
+                            msg_id.append(part_msg_id)
+                            break
+                    if os.path.exists(file):
+                        await aiofiles.os.remove(file)
+                if os.path.exists(filename):
+                    await aiofiles.os.remove(filename)
+                success = True
+                break
+            else:
+                while True:
+                    caption_text = f"""
+                    Vid_id: {vid_id}
+                    Title: {title}
+                    Topic: {topic}
+                    Name: {name}
+                    """
                     try:
-                        msg_id = dl_msg.id
-                    except Exception as error:
-                        logging.exception(
-                            ("In uploading: msg_id", error, url, vid_id, title)
+                        dl_msg, filename = await send_video(
+                            bot, channel, filename, dedent(caption_text)
                         )
+                    except Exception as error:
+                        logger.exception(("In Uploading", error, url, vid_id, title))
                         continue
-                    break
-            if os.path.exists(filename):
-                await aiofiles.os.remove(filename)
-            success = True
-            break
+                    if dl_msg:
+                        try:
+                            msg_id = dl_msg.id
+                        except Exception as error:
+                            logging.exception(
+                                ("In uploading: msg_id", error, url, vid_id, title)
+                            )
+                            continue
+                        break
+                if os.path.exists(filename):
+                    await aiofiles.os.remove(filename)
+                success = True
+                break
         elif not filename:
             logger.error(("No filename", url, vid_id, title))
         elif not os.path.exists(filename):
