@@ -3,27 +3,27 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import sys
 import traceback
 import urllib
 import urllib.parse
 import urllib.request
-import urllib3
 from textwrap import dedent
-import shutil
 
-import aiohttp
-from pyrogram.enums.parse_mode import ParseMode
-from aio_get_video_info import get_video_attributes, get_video_thumb, to_mkv
 import aiofiles
 import aiofiles.os
-from dotenv import load_dotenv
-from pyrogram import Client, filters, idle
-from pyrogram.types import Message, ChatPrivileges
+import aiohttp
 import all_web_dl as awdl
+import urllib3
+from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pyrogram import Client, filters, idle
+from pyrogram.enums.parse_mode import ParseMode
+from pyrogram.types import ChatPrivileges, Message
 
 import realurls
+from aio_get_video_info import get_video_attributes, get_video_thumb, to_mkv
 
 load_dotenv()
 
@@ -195,7 +195,12 @@ async def download_upload_video(bot: Client, channel, video, name):
     for i in range(5):
         try:
             filename, title_ = await awdl.download_url(
-                url, vid_format, title, dl_path=f"./downloads/{vid_id}", allow_drm=allow_drm, keys=keys
+                url,
+                vid_format,
+                title,
+                dl_path=f"./downloads/{vid_id}",
+                allow_drm=allow_drm,
+                keys=keys,
             )
         except Exception as error:
             logger.exception(("In downloading", error, url, vid_id, title))
@@ -302,7 +307,7 @@ async def download(bot: Client, message: Message):
     global bot_username
     caption = message.caption
     try:
-        bot_cmd, bot_index = caption.split()
+        bot_cmd, bot_index, download_id, retry_num = caption.split()
     except:
         return
     if bot_cmd.lower() != f"/download@{bot_username}".lower():
@@ -324,7 +329,7 @@ async def download(bot: Client, message: Message):
     while True:
         dl_json_msg = await message.reply_document(
             done_json_file,
-            caption=f"/copy{CLIENT_BOT} {bot_index} @{bot_username}".lower(),
+            caption=f"/copy{CLIENT_BOT} {bot_index} @{bot_username} {download_id} {retry_num}".lower(),
         )
         if dl_json_msg:
             break
