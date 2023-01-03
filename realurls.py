@@ -1,6 +1,7 @@
-import urllib.parse
-import vigenere
 import os
+import urllib.parse
+
+import vigenere
 
 KEY = os.environ.get("KEY")
 
@@ -134,6 +135,7 @@ def get_real_player(url: str):
     elif parse_res.path.startswith(("/_utk")):
         _, service, video_id = parse_res.path.split("/")
         video_id = dec_str(video_id)
+        video_id = video_id.split("_")[0]
         url = f"/_utk/{video_id}"
     else:
         pass
