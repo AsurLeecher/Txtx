@@ -105,7 +105,7 @@ def get_real_player(url: str):
         queries = urllib.parse.parse_qs(parse_res.query)
         link = queries["url"][0]
         url = dec_str(link)
-        if "videos.classplus" in url:
+        if "videos.classplus" in url or "videoscdn.classplus" in url:
             url = get_real_classplus(url)
         elif any(
             x in url
