@@ -94,7 +94,9 @@ def get_real_player(url: str):
             "/stiq_pdf",
             "/videos",
             "/encryptvdo",
+            "/encryptvdo3",
             "/apdf",
+            "/vpdf",
         )
     ):
         _, service, video_id = parse_res.path.split("/")
