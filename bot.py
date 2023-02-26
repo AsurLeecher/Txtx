@@ -22,11 +22,12 @@ from pyrogram import Client, filters, idle
 from pyrogram.enums.parse_mode import ParseMode
 from pyrogram.types import ChatPrivileges, Message
 
+load_dotenv()
+
 import realurls
 from aio_get_video_info import get_video_attributes, get_video_thumb, to_mkv
 from splitter import splitVideoSize
 
-load_dotenv()
 
 API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
