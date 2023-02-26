@@ -107,7 +107,13 @@ def get_real_player(url: str):
         queries = urllib.parse.parse_qs(parse_res.query)
         link = queries["url"][0]
         url = dec_str(link)
-        if "videos.classplus" in url or "videoscdn.classplus" in url:
+        if "videos" in url and any(
+            x in url
+            for x in [
+                "classplus",
+                "clalzplus"
+            ]
+        ):
             url = get_real_classplus(url)
         elif any(
             x in url
@@ -176,7 +182,7 @@ def real_url(url: str, vid_format: str):
             url = get_without_queries(url)
         elif "player.vimeo" in parse_res.netloc:
             url = get_real_vimeo(url)
-        elif "videos.classplus" in parse_res.netloc:
+        elif "videos" in url and  any(x in parse_res.netloc for x in ["classplus", "clalzplus"]):
             url = get_real_classplus(url)
         elif "jwplayer" in parse_res.netloc:
             url = get_real_jw(url)
