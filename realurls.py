@@ -95,12 +95,16 @@ def get_real_player(url: str):
             "/videos",
             "/encryptvdo",
             "/encryptvdo3",
+            "/encryptvdo5",
             "/apdf",
             "/vpdf",
+            "/npdf",
         )
     ):
         _, service, video_id = parse_res.path.split("/")
         video_id = dec_str(video_id)
+        if parse_res.path.startswith(( "/encryptvdo5", "/npdf" )):
+            video_id = video_id.split("|")[0]
         url = f"/{service}/{video_id}"
         url = get_without_queries(url)
     elif parse_res.path.startswith(("/m3u8", "/mpd", "/video", "/audio", "/html")):
