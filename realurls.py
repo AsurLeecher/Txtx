@@ -94,8 +94,6 @@ def get_real_player(url: str):
             "/stiq_pdf",
             "/videos",
             "/encryptvdo",
-            "/encryptvdo3",
-            "/encryptvdo5",
             "/apdf",
             "/vpdf",
             "/npdf",
@@ -103,7 +101,7 @@ def get_real_player(url: str):
     ):
         _, service, video_id = parse_res.path.split("/")
         video_id = dec_str(video_id)
-        if parse_res.path.startswith(( "/encryptvdo5", "/npdf" )):
+        if parse_res.path.startswith(("/encryptvdo5", "/npdf")):
             video_id = video_id.split("|")[0]
         url = f"/{service}/{video_id}"
         url = get_without_queries(url)
@@ -111,13 +109,7 @@ def get_real_player(url: str):
         queries = urllib.parse.parse_qs(parse_res.query)
         link = queries["url"][0]
         url = dec_str(link)
-        if "videos" in url and any(
-            x in url
-            for x in [
-                "classplus",
-                "clalzplus"
-            ]
-        ):
+        if "videos" in url and any(x in url for x in ["classplus", "clalzplus"]):
             url = get_real_classplus(url)
         elif any(
             x in url
@@ -186,7 +178,9 @@ def real_url(url: str, vid_format: str):
             url = get_without_queries(url)
         elif "player.vimeo" in parse_res.netloc:
             url = get_real_vimeo(url)
-        elif "videos" in url and  any(x in parse_res.netloc for x in ["classplus", "clalzplus"]):
+        elif "videos" in url and any(
+            x in parse_res.netloc for x in ["classplus", "clalzplus"]
+        ):
             url = get_real_classplus(url)
         elif "jwplayer" in parse_res.netloc:
             url = get_real_jw(url)
