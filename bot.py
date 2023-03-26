@@ -248,7 +248,8 @@ async def download_upload_video(bot: Client, channel, video, name):
                 keys=keys,
             )
         except Exception as error:
-            logger.exception(("In downloading", error, url, vid_id, title))
+            awdl.RETRY_DICT[url] = True
+            logger.exception((f"In downloading: Retry {i}", error, url, vid_id, title))
             continue
         if filename and os.path.exists(filename) and os.stat(filename).st_size:
             filename = await to_mkv(filename)
@@ -326,7 +327,8 @@ async def download_upload_video(bot: Client, channel, video, name):
                 success = True
                 break
         elif not filename:
-            logger.error(("No filename", url, vid_id, title))
+            awdl.RETRY_DICT[url] = True
+            logger.error((f"No filename: Retry {i}", url, vid_id, title))
         elif not os.path.exists(filename):
             filename = None
             logger.error(("File don't exists", url, vid_id, title))
