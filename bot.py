@@ -327,7 +327,8 @@ async def download_upload_video(bot: Client, channel, video, name):
                 success = True
                 break
         elif not filename:
-            logger.error(("No filename", url, vid_id, title))
+            awdl.RETRY_DICT[url] = True
+            logger.error((f"No filename: Retry {i}", url, vid_id, title))
         elif not os.path.exists(filename):
             filename = None
             logger.error(("File don't exists", url, vid_id, title))
