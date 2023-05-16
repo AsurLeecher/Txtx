@@ -2,10 +2,7 @@ import asyncio
 import json
 import logging
 import os
-import shlex
-import shutil
 import sys
-import traceback
 import urllib
 import urllib.parse
 import urllib.request
@@ -13,17 +10,16 @@ from textwrap import dedent
 
 import aiofiles
 import aiofiles.os
-import aiohttp
-import all_web_dl as awdl
-import urllib3
+
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram import Client, filters, idle
 from pyrogram.enums.parse_mode import ParseMode
-from pyrogram.types import ChatPrivileges, Message
+from pyrogram.types import Message
 
 load_dotenv()
 
+from drm_dl.file_dl import File
 import realurls
 from aio_get_video_info import get_video_attributes, get_video_thumb, to_mkv
 from splitter import splitVideoSize
@@ -237,19 +233,14 @@ async def download_upload_video(bot: Client, channel, video, name):
         return vid_id, (channel, msg_id), True
     success = False
     filename = None
-    for i in range(5):
+    dl_path = f"./downloads/{vid_id}/"
+    file = File(url, vid_format, title, dl_path, keys)
+    for file.retry_num in range(5):
         try:
-            filename, title_ = await awdl.download_url(
-                url,
-                vid_format,
-                title,
-                dl_path=f"./downloads/{vid_id}",
-                allow_drm=allow_drm,
-                keys=keys,
-            )
+            await file.real_download()
+            filename, title = file.filename, file.title
         except Exception as error:
-            awdl.RETRY_DICT[url] = True
-            logger.exception((f"In downloading: Retry {i}", error, url, vid_id, title))
+            logger.exception((f"In downloading: Retry {file.retry_num}", error, url, vid_id, title))
             continue
         if filename and os.path.exists(filename) and os.stat(filename).st_size:
             filename = await to_mkv(filename)
@@ -327,8 +318,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                 success = True
                 break
         elif not filename:
-            awdl.RETRY_DICT[url] = True
-            logger.error((f"No filename: Retry {i}", url, vid_id, title))
+            logger.error((f"No filename: Retry {file.retry_num}", url, vid_id, title))
         elif not os.path.exists(filename):
             filename = None
             logger.error(("File don't exists", url, vid_id, title))
