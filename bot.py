@@ -34,7 +34,10 @@ DEBUG = os.environ.get("DEBUG", True) != "false"
 DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL"))
 INTERACTION_CHANNEL = int(os.environ.get("INTERACTION_CHANNEL"))
 DL_NUM = int(os.environ.get("DL_NUM"))
+TO_MKV_SLEEP = int(os.environ.get("TO_MKV_SLEEP"))
 thumb = os.environ.get("THUMB")
+
+drm_list = ["/encryptvdo4/", "/encryptvdo6/", "/encryptvdo8/"]
 
 if thumb.startswith("http://") or thumb.startswith("https://"):
     cmd = f"wget '{thumb}' -O 'thumb.jpg'"
@@ -243,6 +246,8 @@ async def download_upload_video(bot: Client, channel, video, name):
             logger.exception((f"In downloading: Retry {file.retry_num}", error, url, vid_id, title))
             continue
         if filename and os.path.exists(filename) and os.stat(filename).st_size:
+            if any(x in url for x in drm_list):
+                await asyncio.sleep(TO_MKV_SLEEP)
             filename = await to_mkv(filename)
             file_size = os.stat(filename).st_size
             if file_size > 2_000_000_000:
