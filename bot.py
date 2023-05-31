@@ -245,8 +245,8 @@ async def download_upload_video(bot: Client, channel, video, name):
             logger.exception((f"In downloading: Retry {file.retry_num}", error, url, vid_id, title))
             continue
         if filename and os.path.exists(filename) and os.stat(filename).st_size:
-            if not file.is_drm:
-                filename = await to_mkv(filename)
+            # if not file.is_drm:
+            #     filename = await to_mkv(filename)
             file_size = os.stat(filename).st_size
             if file_size > 2_000_000_000:
                 files = await splitVideoSize(filename)
