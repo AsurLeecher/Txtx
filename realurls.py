@@ -133,7 +133,7 @@ def get_real_player(url: str):
             _id = queries["id"][0]
             _id = dec_str(_id)
             url = f"https://drive.google.com/open?id={_id}"
-    elif parse_res.path.startswith(("/utk")):
+    elif parse_res.path.startswith(("/utk", "/ajw")):
         _, service, video_id = parse_res.path.split("/")
         video_id = dec_str(video_id)
         video_id = video_id.split("_")[0]
