@@ -146,7 +146,7 @@ async def add_msg_to_db(url, vid_format, msg_id):
     return result.acknowledged
 
 
-async def download_upload_video(bot: Client, channel, video, name):
+async def download_upload_video(bot: Client, channel, video, name, download_id):
     vid_id, url, vid_format, title, topic, allow_drm, keys = video
     prev_msg = await get_msg_from_db(url, vid_format)
     # print(prev_msg)
@@ -163,6 +163,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                     Title: {title}
                     Topic: {topic}
                     Name: {name}
+                    ID: {download_id}
                     """
                     try:
                         dl_msg = await bot.copy_message(
@@ -202,6 +203,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                 Title: {title}
                 Topic: {topic}
                 Name: {name}
+                ID: {download_id}
                 """
                 try:
                     dl_msg = await bot.copy_message(
@@ -259,6 +261,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                         Title: {title}
                         Topic: {topic}
                         Name: {name}
+                        ID: {download_id}
                         """
                         try:
                             dl_msg, file = await send_video(
@@ -299,6 +302,7 @@ async def download_upload_video(bot: Client, channel, video, name):
                     Title: {title}
                     Topic: {topic}
                     Name: {name}
+                    ID: {download_id}
                     """
                     try:
                         dl_msg, filename = await send_video(
@@ -353,6 +357,7 @@ async def download_upload_video(bot: Client, channel, video, name):
         Title: {title}
         Topic: {topic}
         Name: {name}
+        ID: {download_id}
         """
         while True:
             try:
@@ -374,15 +379,15 @@ async def download_upload_video(bot: Client, channel, video, name):
     return vid_id, (DUMP_CHANNEL, msg_id), success
 
 
-async def download_upload_video_sem(sem, bot: Client, channel, video, name):
+async def download_upload_video_sem(sem, bot: Client, channel, video, name, download_id):
     async with sem:
-        return await download_upload_video(bot, channel, video, name)
+        return await download_upload_video(bot, channel, video, name, download_id)
 
 
-async def download_upload_videos(bot: Client, channel, videos, name):
+async def download_upload_videos(bot: Client, channel, videos, name, download_id):
     sem = asyncio.Semaphore(DL_NUM)
     dl_up_tasks = [
-        download_upload_video_sem(sem, bot, channel, video, name) for video in videos
+        download_upload_video_sem(sem, bot, channel, video, name, download_id) for video in videos
     ]
     downloaded_videos = await asyncio.gather(*dl_up_tasks)
     return downloaded_videos
@@ -406,7 +411,7 @@ async def download(bot: Client, message: Message):
     chat = message_dict["chat"]
     videos = message_dict["videos"]
     name = message_dict["name"]
-    downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos, name)
+    downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos, name, download_id)
     done_dict = {"chat": chat, "videos": sorted(downloaded_videos)}
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
     # print(done_json_file)
