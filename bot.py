@@ -118,7 +118,7 @@ async def send_video(bot: Client, channel, path, caption):
     return msg, path
 
 
-async def filter_deleted(bot: Client, prev_msg):
+async def filter_deleted(prev_msg):
     prev_chat, prev_msg_id = prev_msg
     if isinstance(prev_msg_id, list):
         msg_ids = prev_msg_id
