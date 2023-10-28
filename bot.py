@@ -118,6 +118,20 @@ async def send_video(bot: Client, channel, path, caption):
     return msg, path
 
 
+async def filter_deleted(bot: Client, prev_msg):
+    prev_chat, prev_msg_id = prev_msg
+    if isinstance(prev_msg_id, list):
+        msg_ids = prev_msg_id
+    else:
+        msg_ids = [prev_msg_id]
+
+    msgs = await bot.get_messages(prev_chat, msg_ids)
+    for msg in msgs:
+        if msg.empty:
+            return True
+    return False
+
+
 async def get_msg_from_db(url, vid_format):
     client = AsyncIOMotorClient(DB_URL)
     db_name = "downloaded"
@@ -128,6 +142,10 @@ async def get_msg_from_db(url, vid_format):
     url, vid_format = realurls.real_url(url, vid_format)
     video = await collection.find_one({"url": url, "vid_format": vid_format})
     if not video:
+        return
+    deleted = await filter_deleted(video["msg"])
+    if deleted:
+        await collection.delete_many({"url": url, "vid_format": vid_format})
         return
     return video["msg"]
 
@@ -174,7 +192,16 @@ async def download_upload_video(bot: Client, channel, video, name, download_id):
                         )
                     except Exception as error:
                         logging.exception(
-                            ("In copying", error, url, vid_format, vid_id, title, prev_part_msg_id, part)
+                            (
+                                "In copying",
+                                error,
+                                url,
+                                vid_format,
+                                vid_id,
+                                title,
+                                prev_part_msg_id,
+                                part,
+                            )
                         )
                         continue
                     if dl_msg:
@@ -214,7 +241,15 @@ async def download_upload_video(bot: Client, channel, video, name, download_id):
                     )
                 except Exception as error:
                     logging.exception(
-                        ("In copying", error, url, vid_format, vid_id, title, prev_msg_id)
+                        (
+                            "In copying",
+                            error,
+                            url,
+                            vid_format,
+                            vid_id,
+                            title,
+                            prev_msg_id,
+                        )
                     )
                     continue
                 if dl_msg:
@@ -244,7 +279,9 @@ async def download_upload_video(bot: Client, channel, video, name, download_id):
             await file.real_download()
             filename, title = file.filename, file.title
         except Exception as error:
-            logger.exception((f"In downloading: Retry {file.retry_num}", error, url, vid_id, title))
+            logger.exception(
+                (f"In downloading: Retry {file.retry_num}", error, url, vid_id, title)
+            )
             continue
         if filename and os.path.exists(filename) and os.stat(filename).st_size:
             # if not file.is_drm:
@@ -379,7 +416,9 @@ async def download_upload_video(bot: Client, channel, video, name, download_id):
     return vid_id, (DUMP_CHANNEL, msg_id), success
 
 
-async def download_upload_video_sem(sem, bot: Client, channel, video, name, download_id):
+async def download_upload_video_sem(
+    sem, bot: Client, channel, video, name, download_id
+):
     async with sem:
         return await download_upload_video(bot, channel, video, name, download_id)
 
@@ -387,7 +426,8 @@ async def download_upload_video_sem(sem, bot: Client, channel, video, name, down
 async def download_upload_videos(bot: Client, channel, videos, name, download_id):
     sem = asyncio.Semaphore(DL_NUM)
     dl_up_tasks = [
-        download_upload_video_sem(sem, bot, channel, video, name, download_id) for video in videos
+        download_upload_video_sem(sem, bot, channel, video, name, download_id)
+        for video in videos
     ]
     downloaded_videos = await asyncio.gather(*dl_up_tasks)
     return downloaded_videos
@@ -411,7 +451,9 @@ async def download(bot: Client, message: Message):
     chat = message_dict["chat"]
     videos = message_dict["videos"]
     name = message_dict["name"]
-    downloaded_videos = await download_upload_videos(bot, DUMP_CHANNEL, videos, name, download_id)
+    downloaded_videos = await download_upload_videos(
+        bot, DUMP_CHANNEL, videos, name, download_id
+    )
     done_dict = {"chat": chat, "videos": sorted(downloaded_videos)}
     done_json_file = f"{os.path.dirname(json_file)}/Done_{os.path.basename(json_file)}"
     # print(done_json_file)
