@@ -1,5 +1,5 @@
 aiohttp
-aiofiles
+aiofiles==23.1.0
 pyaes==1.6.1
 Pyrogram==2.0.106
 PySocks==1.7.1
