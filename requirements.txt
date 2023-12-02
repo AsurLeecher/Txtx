@@ -1,3 +1,4 @@
+aiohttp
 aiofiles
 pyaes==1.6.1
 Pyrogram==2.0.106
